@@ -1,0 +1,13 @@
+# 构建输出目录：编译生成的文件，每个人本地都能重新生成，不该进版本库
+build/
+
+# VSCode 的个人配置（编辑器设置因人而异）
+.vscode/
+
+# Python 虚拟环境：体积大、可通过 requirements.txt 重建
+.venv/
+**/.venv/
+
+# Python 运行时缓存
+__pycache__/
+*.pyc

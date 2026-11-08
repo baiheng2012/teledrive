@@ -1,0 +1,29 @@
+# 工作流名称，显示在 GitHub  Actions 页面
+name: CI
+
+# 触发条件：每次 push 和每次 pull request 都运行
+on: [push, pull_request]
+
+jobs:
+  build-test:
+    
+    runs-on: ubuntu-latest
+    steps:
+      # 第 1 步：把仓库代码拉取到虚拟机里
+      - uses: actions/checkout@v4
+
+      # 第 2 步：安装 ninja（cmake 和 g++ 在 ubuntu-latest 里已自带）
+      - name: Install tools
+        run: sudo apt-get update && sudo apt-get install -y ninja-build
+
+      # 第 3 步：配置（和本地的命令一样）
+      - name: Configure
+        run: cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Debug
+
+      # 第 4 步：编译
+      - name: Build
+        run: cmake --build build
+
+      # 第 5 步：运行测试，任何一个失败，整个 CI 就会变红
+      - name: Test
+        run: ctest --test-dir build --output-on-failure
