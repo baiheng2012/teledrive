@@ -14,6 +14,7 @@ add_subdirectory(libs/common)
 add_subdirectory(libs/protocol)
 add_subdirectory(libs/transport)
 add_subdirectory(libs/safety)
+add_subdirectory(libs/sim)
 
 
 

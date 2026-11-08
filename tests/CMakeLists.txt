@@ -28,4 +28,14 @@ add_executable(safety_tests
 target_link_libraries(safety_tests PRIVATE teledrive::safety GTest::gtest_main)
 gtest_discover_tests(safety_tests)
 
+add_executable(sim_tests
+  sim/diff_drive_test.cpp
+  sim/closed_loop_test.cpp
+)
+# 闭环测试同时用到 sim 和 safety
+target_link_libraries(sim_tests PRIVATE teledrive::sim teledrive::safety GTest::gtest_main)
+gtest_discover_tests(sim_tests)
+
+
+
 
