@@ -12,6 +12,7 @@ option(TELEDRIVE_BUILD_TESTS "Build unit tests" ON)
 
 add_subdirectory(libs/common)
 add_subdirectory(libs/protocol)
+add_subdirectory(libs/transport)
 
 if(TELEDRIVE_BUILD_TESTS)
   include(FetchContent)
