@@ -19,3 +19,13 @@ add_executable(transport_tests
 target_link_libraries(transport_tests PRIVATE
   teledrive::transport teledrive::protocol GTest::gtest_main)
 gtest_discover_tests(transport_tests)
+
+add_executable(safety_tests
+  safety/limits_test.cpp
+  safety/watchdog_test.cpp
+  safety/safety_controller_test.cpp
+)
+target_link_libraries(safety_tests PRIVATE teledrive::safety GTest::gtest_main)
+gtest_discover_tests(safety_tests)
+
+
