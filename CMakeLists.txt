@@ -11,6 +11,7 @@ add_compile_options(-Wall -Wextra -Wpedantic)
 option(TELEDRIVE_BUILD_TESTS "Build unit tests" ON)
 
 add_subdirectory(libs/common)
+add_subdirectory(libs/protocol)
 
 if(TELEDRIVE_BUILD_TESTS)
   include(FetchContent)
