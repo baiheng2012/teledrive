@@ -11,6 +11,14 @@ and semi-autonomous driving features.
 *The operator console (top) drives the simulated vehicle (bottom). E-stop latches a fault; suspending the
 operator process triggers the watchdog and the vehicle brakes automatically.*
 
+## Operator assist: heading hold
+
+With a constant yaw disturbance (simulating a slipping wheel), the vehicle drifts into a
+circle without assistance; the PID heading hold keeps it on a straight line.
+
+![Heading hold](docs/heading_hold.png)
+
+
 ## Features
 
 - Binary UDP protocol with versioning, sequence numbers and CRC-16

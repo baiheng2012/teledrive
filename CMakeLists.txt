@@ -15,7 +15,9 @@ add_subdirectory(libs/protocol)
 add_subdirectory(libs/transport)
 add_subdirectory(libs/safety)
 add_subdirectory(libs/sim)
-
+add_subdirectory(libs/control)
+add_subdirectory(libs/node)
+add_subdirectory(apps)
 
 
 if(TELEDRIVE_BUILD_TESTS)

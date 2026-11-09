@@ -36,6 +36,16 @@ add_executable(sim_tests
 target_link_libraries(sim_tests PRIVATE teledrive::sim teledrive::safety GTest::gtest_main)
 gtest_discover_tests(sim_tests)
 
+add_executable(node_tests
+  node/end_to_end_test.cpp
+  node/manual_input_test.cpp
+)
+target_link_libraries(node_tests PRIVATE teledrive::node GTest::gtest_main)
+gtest_discover_tests(node_tests)
 
-
-
+add_executable(control_tests
+  control/pid_test.cpp
+  control/heading_hold_test.cpp
+)
+target_link_libraries(control_tests PRIVATE teledrive::control teledrive::sim GTest::gtest_main)
+gtest_discover_tests(control_tests)
