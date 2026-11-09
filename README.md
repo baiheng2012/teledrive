@@ -1,0 +1,43 @@
+# TeleDrive
+
+A C++17 tele-operation framework with a safety state machine, heartbeat/command watchdog,
+and a simulated differential-drive vehicle. Built as a foundation for operator-assist
+and semi-autonomous driving features.
+
+## Demo
+
+![TeleDrive demo](docs/demo.gif)
+
+*Operator (right) drives the simulated vehicle (left). E-stop latches a fault; suspending the
+operator process triggers the watchdog and the vehicle brakes automatically.*
+
+## Features
+
+- Binary UDP protocol with versioning, sequence numbers and CRC-16
+- Transport and clock abstractions (`ITransport`, `IClock`) for deterministic testing
+- Safety state machine: Idle / Armed / Driving / Fault, latched faults, E-stop priority
+- Command watchdog (200 ms), command limiting, NaN/Inf rejection
+- Differential-drive simulation with acceleration limits and battery model
+- Replay/duplicate rejection with sequence wrap-around handling
+- CI (GitHub Actions) and Docker build, 60+ unit and end-to-end tests
+
+## Build and run
+
+```bash
+cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
+cmake --build build
+ctest --test-dir build --output-on-failure
+
+# terminal 1
+./build/apps/vehicle_sim
+# terminal 2
+./build/apps/operator_cli
+```
+
+Keys: `e` arm/disarm, `w`/`s` speed, `a`/`d` turn, `space` zero, `x` E-stop, `r` reset, `q` quit.
+
+## Known limitations
+
+- No authentication or encryption on the link
+- Keyboard input cannot detect key release, so an arm toggle replaces a true deadman switch
+- Status line assumes a terminal at least 80 columns wide
