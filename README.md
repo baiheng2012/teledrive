@@ -8,7 +8,7 @@ and semi-autonomous driving features.
 
 ![TeleDrive demo](docs/demo.gif)
 
-*Operator (right) drives the simulated vehicle (left). E-stop latches a fault; suspending the
+*The operator console (top) drives the simulated vehicle (bottom). E-stop latches a fault; suspending the
 operator process triggers the watchdog and the vehicle brakes automatically.*
 
 ## Features
