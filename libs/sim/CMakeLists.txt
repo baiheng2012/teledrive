@@ -1,5 +1,6 @@
 add_library(sim STATIC
   src/diff_drive.cpp
+  src/lidar.cpp
 )
 add_library(teledrive::sim ALIAS sim)
 

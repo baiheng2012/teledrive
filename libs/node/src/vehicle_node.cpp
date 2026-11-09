@@ -30,7 +30,8 @@ VehicleNode::VehicleNode(transport::ITransport& transport, const IClock& clock,
       config_(config),
       safety_(clock, config.safety),
       model_(config.vehicle),
-      heading_hold_() {}
+      heading_hold_() ,
+      lidar_(config.lidar){}
 
 void VehicleNode::tick() {
   // 1) 收包：非阻塞，取到没有为止（或达到上限）
@@ -44,20 +45,33 @@ void VehicleNode::tick() {
   safety_.update();
 
   // 3) 把"经过安全层审核的指令"交给车辆模型。
-  //    顺序很重要：辅助算法只能作用在安全层【之后】，永远不能绕过它。
-  //    只有 Driving 状态才介入；其他状态（Idle/Armed/Fault）输出本来就是零，
-  //    此时让 heading_hold 重置，避免下次起步时带着旧的锁定目标。
+  //    处理链：安全层 → 避障限速 → 航向保持 → 车辆。
+  //    顺序的原则：越靠前越"安全相关"，后面的辅助只能在前面放行的范围内工作。
   auto cmd = safety_.output();
-  if (config_.heading_hold_enabled &&
-      safety_.state() == protocol::VehicleState::Driving) {
-    const auto& s = model_.state();
-    cmd.angular = static_cast<float>(heading_hold_.update(
-        cmd.angular, s.pose.heading, s.linear_velocity, config_.dt));
+  obstacle_limited_ = false;
+
+  if (safety_.state() == protocol::VehicleState::Driving) {
+    // 避障限速：用雷达看前方，压低过快的前进指令
+    if (config_.obstacle_assist_enabled) {
+      const auto scan = lidar_.scan(config_.world, model_.state().pose);
+      const auto r = control::limit_for_obstacles(cmd, scan, config_.limiter);
+      cmd = r.command;
+      obstacle_limited_ = r.limited;
+    }
+    // 航向保持：只改角速度
+    if (config_.heading_hold_enabled) {
+      const auto& s = model_.state();
+      cmd.angular = static_cast<float>(
+          heading_hold_.update(cmd.angular, s.pose.heading, s.linear_velocity, config_.dt));
+    }
   } else {
-    // 不在 Driving：用速度 0 调用一次，让内部状态复位（update 在不动时会 reset）
+    // 不在 Driving：让航向保持复位，避免下次起步带着旧的锁定目标
     heading_hold_.update(0.0, model_.state().pose.heading, 0.0, config_.dt);
   }
   model_.step(cmd, config_.dt);
+
+
+
 
   // 4) 按频率回传遥测（还不知道对端是谁时无处可发）
   ++tick_count_;

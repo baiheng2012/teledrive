@@ -56,8 +56,16 @@ int main(int argc, char** argv) {
   }
 
   teledrive::SteadyClock clock;
-  teledrive::node::VehicleNode node(*udp, clock);
+//  teledrive::node::VehicleNode node(*udp, clock);
+  
+
+  teledrive::node::VehicleNodeConfig config;
+  // 在正前方 5m 处放一个半径 0.5m 的障碍物，用来演示避障限速
+  config.world.obstacles.push_back(teledrive::sim::Circle{teledrive::Vec2{5.0, 0.0}, 0.5});
+  teledrive::node::VehicleNode node(*udp, clock, config);
+  
   std::printf("vehicle_sim listening on UDP port %u  (Ctrl-C to quit)\n", static_cast<unsigned>(port));
+
 
   teledrive::Periodic loop(std::chrono::milliseconds(20));  // 50Hz
   unsigned tick = 0;
@@ -68,12 +76,24 @@ int main(int argc, char** argv) {
     if (++tick % 25 == 0) {
       const auto& s = node.model().state();
       const auto& st = node.stats();
-      std::printf("\r[%-7s] x=%6.2f y=%6.2f v=%5.2f bat=%5.1f%% | rx ok=%llu bad=%llu stale=%llu | fault=%s\033[K",
-                  teledrive::node::name(node.safety().state()), s.pose.position.x,
-                  s.pose.position.y, s.linear_velocity, s.battery_pct,
-                  static_cast<unsigned long long>(st.rx_ok), static_cast<unsigned long long>(st.rx_bad),
-                  static_cast<unsigned long long>(st.rx_stale),
-                  teledrive::node::name(node.safety().fault_reason()));
+      
+      //std::printf("\r[%-7s] x=%6.2f y=%6.2f v=%5.2f bat=%5.1f%% | rx ok=%llu bad=%llu stale=%llu | fault=%s\033[K",
+      //            teledrive::node::name(node.safety().state()), s.pose.position.x,
+      //            s.pose.position.y, s.linear_velocity, s.battery_pct,
+      //            static_cast<unsigned long long>(st.rx_ok), static_cast<unsigned long long>(st.rx_bad),
+      //            static_cast<unsigned long long>(st.rx_stale),
+      //            teledrive::node::name(node.safety().fault_reason()));
+      
+      std::printf("\r[%-7s] x=%6.2f y=%6.2f v=%5.2f bat=%4.1f%% rx=%llu bad=%llu %s %s\033[K",
+              teledrive::node::name(node.safety().state()), s.pose.position.x,
+              s.pose.position.y, s.linear_velocity, s.battery_pct,
+              static_cast<unsigned long long>(st.rx_ok),
+              static_cast<unsigned long long>(st.rx_bad),
+              teledrive::node::name(node.safety().fault_reason()),
+              node.obstacle_limited() ? "OBSTACLE-LIMIT" : "");
+
+
+
       std::fflush(stdout);
     }
     loop.wait();

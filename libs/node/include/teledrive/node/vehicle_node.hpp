@@ -17,7 +17,8 @@
 #include "teledrive/transport/transport.hpp"
 
 #include "teledrive/control/heading_hold.hpp"
-
+#include "teledrive/control/speed_limiter.hpp"
+#include "teledrive/sim/lidar.hpp"
 
 
 
@@ -31,6 +32,11 @@ struct VehicleNodeConfig {
   Duration seq_resync_after{std::chrono::seconds(1)};  // 静默超过此时间，接受任意 seq
 
   bool heading_hold_enabled{true};   // 是否启用航向保持辅助
+  sim::World world{};                         // 仿真世界里的障碍物，默认为空
+  sim::LidarConfig lidar{};
+  control::SpeedLimiterConfig limiter{};
+  bool obstacle_assist_enabled{true};
+
 
 };
 
@@ -54,6 +60,7 @@ class VehicleNode {
   const safety::SafetyController& safety() const { return safety_; }
   const sim::DiffDriveModel& model() const { return model_; }
   const VehicleNodeStats& stats() const { return stats_; }
+  bool obstacle_limited() const { return obstacle_limited_; }  // 上一个周期辅助是否介入
 
  private:
   void handle_datagram(const transport::Datagram& d);
@@ -77,6 +84,10 @@ class VehicleNode {
 
   std::uint16_t tx_seq_{0};       // 发送方向的序列号
   std::uint32_t tick_count_{0};
+  sim::Lidar lidar_;
+  bool obstacle_limited_{false};
+
+
 };
 
 }  // namespace teledrive::node
