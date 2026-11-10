@@ -100,8 +100,8 @@ int main(int argc, char** argv) {
   teledrive::node::ManualInput input;
 
   std::printf("TeleDrive operator -> %s\n", teledrive::transport::to_string(*vehicle).c_str());
-  std::printf("keys: e=arm/disarm  w/s=speed  a/d=turn  space=zero  x=E-STOP  r=reset  q=quit\n\n");
-
+ // std::printf("keys: e=arm/disarm  w/s=speed  a/d=turn  space=zero  x=E-STOP  r=reset  q=quit\n\n");
+  std::printf("keys: e=arm/disarm  m=auto  w/s=speed  a/d=turn  space=zero  x=E-STOP  r=reset  q=quit\n\n");
   {
     RawTerminal terminal;  // 作用域结束时自动恢复终端
     if (!terminal.ok()) {
@@ -132,7 +132,7 @@ int main(int argc, char** argv) {
           std::printf("\r%s %-7s x=%6.2f y=%6.2f hdg=%5.2f v=%5.2f bat=%3u%% rtt=%5.1fms [%s]\033[K",
                       alive ? "LINK" : "LOST", teledrive::node::name(t->state), t->x, t->y,
                       t->heading, t->speed, static_cast<unsigned>(t->battery_pct), rtt_ms,
-                      input.armed() ? "armed" : "disarmed");
+                      input.auto_mode() ? "AUTO" : (input.armed() ? "armed" : "disarmed"));
         } else {
           std::printf("\rwaiting for vehicle...\033[K");
         }

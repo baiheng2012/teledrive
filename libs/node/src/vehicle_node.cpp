@@ -31,7 +31,12 @@ VehicleNode::VehicleNode(transport::ITransport& transport, const IClock& clock,
       safety_(clock, config.safety),
       model_(config.vehicle),
       heading_hold_() ,
-      lidar_(config.lidar){}
+      lidar_(config.lidar),
+      pursuit_(config.pursuit){
+        pursuit_.set_path(config.path);
+      }
+      
+      
 
 void VehicleNode::tick() {
   // 1) 收包：非阻塞，取到没有为止（或达到上限）
@@ -47,6 +52,7 @@ void VehicleNode::tick() {
   // 3) 把"经过安全层审核的指令"交给车辆模型。
   //    处理链：安全层 → 避障限速 → 航向保持 → 车辆。
   //    顺序的原则：越靠前越"安全相关"，后面的辅助只能在前面放行的范围内工作。
+  /*
   auto cmd = safety_.output();
   obstacle_limited_ = false;
 
@@ -69,8 +75,48 @@ void VehicleNode::tick() {
     heading_hold_.update(0.0, model_.state().pose.heading, 0.0, config_.dt);
   }
   model_.step(cmd, config_.dt);
+*/
+  // 3) 处理链：安全层 → （自动模式则由路径跟踪产生速度）→ 避障限速 → 航向保持 → 车辆。
+  //    原则不变：越靠前越"安全相关"，后面的环节只能在前面放行的范围内工作。
+  auto cmd = safety_.output();
+  obstacle_limited_ = false;
 
+  const bool driving = safety_.state() == protocol::VehicleState::Driving;
+  // 自动模式 = 安全层放行了 Driving，并且放行的指令里带着自动标志。
+  // 也就是说：没 arm、故障、失联时，自动标志根本到不了这里。
+  const bool auto_mode = driving && (cmd.flags & protocol::kFlagAuto) != 0;
 
+  if (auto_mode && !auto_active_) {
+    pursuit_.restart(model_.state().pose);   // 刚切入自动：从离车最近的路段开始
+  }
+  auto_active_ = auto_mode;
+
+  if (auto_mode) {
+    // 速度来自路径跟踪，操作员的速度字段被忽略
+    const auto p = pursuit_.update(model_.state().pose);
+    cmd.linear = static_cast<float>(p.linear);
+    cmd.angular = static_cast<float>(p.angular);
+    // 算法输出也要再过一次安全限幅：算法的 bug 比操作员的误操作更危险
+    const auto safe = safety::sanitize(cmd, config_.safety.limits);
+    cmd = safe ? *safe : protocol::Command{};
+  }
+
+  if (driving && config_.obstacle_assist_enabled) {
+    const auto scan = lidar_.scan(config_.world, model_.state().pose);
+    const auto r = control::limit_for_obstacles(cmd, scan, config_.limiter);
+    cmd = r.command;
+    obstacle_limited_ = r.limited;
+  }
+
+  // 航向保持只在"手动 + Driving"时工作：自动模式下路径跟踪自己控制航向，两者会打架
+  if (driving && !auto_mode && config_.heading_hold_enabled) {
+    const auto& s = model_.state();
+    cmd.angular = static_cast<float>(
+        heading_hold_.update(cmd.angular, s.pose.heading, s.linear_velocity, config_.dt));
+  } else {
+    heading_hold_.update(0.0, model_.state().pose.heading, 0.0, config_.dt);  // 复位内部状态
+  }
+  model_.step(cmd, config_.dt);
 
 
   // 4) 按频率回传遥测（还不知道对端是谁时无处可发）

@@ -30,6 +30,7 @@ struct Heartbeat {
 inline constexpr std::uint8_t kFlagEStop = 0x01;  // bit0: 急停请求
 inline constexpr std::uint8_t kFlagArm   = 0x02;  // bit1: 请求上电/arm
 inline constexpr std::uint8_t kFlagReset = 0x04;  // bit2: 请求清除故障（Fault -> Idle）
+inline constexpr std::uint8_t kFlagAuto  = 0x08;  // bit3: 请求自动模式（沿预设路径行驶）
 
 struct Command {
   float linear{0.0f};    // 期望线速度 m/s

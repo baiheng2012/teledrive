@@ -19,7 +19,8 @@
 #include "teledrive/control/heading_hold.hpp"
 #include "teledrive/control/speed_limiter.hpp"
 #include "teledrive/sim/lidar.hpp"
-
+#include <vector>
+#include "teledrive/control/pure_pursuit.hpp"
 
 
 namespace teledrive::node {
@@ -36,7 +37,8 @@ struct VehicleNodeConfig {
   sim::LidarConfig lidar{};
   control::SpeedLimiterConfig limiter{};
   bool obstacle_assist_enabled{true};
-
+  std::vector<Vec2> path{};                  // 自动模式沿着它行驶；为空则自动模式无效果
+  control::PurePursuitConfig pursuit{};
 
 };
 
@@ -61,6 +63,9 @@ class VehicleNode {
   const sim::DiffDriveModel& model() const { return model_; }
   const VehicleNodeStats& stats() const { return stats_; }
   bool obstacle_limited() const { return obstacle_limited_; }  // 上一个周期辅助是否介入
+  bool auto_active() const { return auto_active_; }          // 上一个周期是否处于自动模式
+  bool path_finished() const { return pursuit_.finished(); }
+
 
  private:
   void handle_datagram(const transport::Datagram& d);
@@ -86,7 +91,8 @@ class VehicleNode {
   std::uint32_t tick_count_{0};
   sim::Lidar lidar_;
   bool obstacle_limited_{false};
-
+  control::PurePursuit pursuit_;
+  bool auto_active_{false};
 
 };
 

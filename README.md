@@ -11,6 +11,23 @@ and semi-autonomous driving features.
 *The operator console (top) drives the simulated vehicle (bottom). E-stop latches a fault; suspending the
 operator process triggers the watchdog and the vehicle brakes automatically.*
 
+## Semi-autonomous mode: pure pursuit
+
+Press `m` after arming to let the vehicle follow a preset path. The path follower runs
+*behind* the safety layer: arm switch, command watchdog, E-stop and lidar speed limiting
+all still apply, and any manual driving key immediately takes control back.
+
+![Auto mode demo](docs/demo2.gif)
+
+*Live demo: `e` then `m` starts the run; pressing a driving key hands control back at once.*
+
+Offline simulation of the same controller on a square path. The vehicle cuts slightly
+inside each corner, which is inherent to pure pursuit (a larger lookahead cuts more,
+a smaller one tracks tighter but oscillates more):
+
+![Pure pursuit](docs/pure_pursuit.png)
+
+
 ## Operator assist: heading hold
 
 With a constant yaw disturbance (simulating a slipping wheel), the vehicle drifts into a

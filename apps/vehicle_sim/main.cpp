@@ -62,6 +62,8 @@ int main(int argc, char** argv) {
   teledrive::node::VehicleNodeConfig config;
   // 在正前方 5m 处放一个半径 0.5m 的障碍物，用来演示避障限速
   config.world.obstacles.push_back(teledrive::sim::Circle{teledrive::Vec2{5.0, 0.0}, 0.5});
+  config.path = {teledrive::Vec2{0, 0}, teledrive::Vec2{3, 0}, teledrive::Vec2{3, 3},
+                 teledrive::Vec2{0, 3}, teledrive::Vec2{0, 0.6}};
   teledrive::node::VehicleNode node(*udp, clock, config);
   
   std::printf("vehicle_sim listening on UDP port %u  (Ctrl-C to quit)\n", static_cast<unsigned>(port));
@@ -90,7 +92,8 @@ int main(int argc, char** argv) {
               static_cast<unsigned long long>(st.rx_ok),
               static_cast<unsigned long long>(st.rx_bad),
               teledrive::node::name(node.safety().fault_reason()),
-              node.obstacle_limited() ? "OBSTACLE-LIMIT" : "");
+              node.obstacle_limited() ? "OBSTACLE-LIMIT"
+                      : (node.auto_active() ? (node.path_finished() ? "AUTO-DONE" : "AUTO") : ""));
 
 
 

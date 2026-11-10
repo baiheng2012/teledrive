@@ -210,3 +210,43 @@ TEST_F(SafetyScenario, CanRecoverOnlyViaResetThenReArm) {
   ctrl.on_command(make(0.5f, 0, kFlagArm)); // 重新行驶
   EXPECT_EQ(ctrl.state(), VehicleState::Driving);
 }
+
+// ============ 自动模式标志 ============
+// 自动标志的原则：它只是"请求"，不能绕过 arm、看门狗、急停。
+
+TEST_F(SafetyScenario, AutoFlagEntersDrivingEvenWithZeroVelocity) {
+  ctrl.on_command(make(0, 0, kFlagArm));                                  // Idle -> Armed
+  ctrl.on_command(make(0, 0, kFlagArm | teledrive::protocol::kFlagAuto)); // Armed -> Driving
+  EXPECT_EQ(ctrl.state(), VehicleState::Driving);
+  EXPECT_NE(ctrl.output().flags & teledrive::protocol::kFlagAuto, 0);     // 标志传到了输出
+}
+
+TEST_F(SafetyScenario, AutoFlagWithoutArmDoesNothing) {
+  ctrl.on_command(make(0, 0, teledrive::protocol::kFlagAuto));
+  EXPECT_EQ(ctrl.state(), VehicleState::Idle);
+}
+
+TEST_F(SafetyScenario, AutoModeIsStillSubjectToWatchdog) {
+  ctrl.on_command(make(0, 0, kFlagArm));
+  ctrl.on_command(make(0, 0, kFlagArm | teledrive::protocol::kFlagAuto));
+  ASSERT_EQ(ctrl.state(), VehicleState::Driving);
+  clock.advance(201ms);
+  ctrl.update();
+  EXPECT_EQ(ctrl.state(), VehicleState::Fault);
+  EXPECT_EQ(ctrl.fault_reason(), FaultReason::LinkTimeout);
+}
+
+TEST_F(SafetyScenario, DroppingAutoFlagReturnsToArmed) {
+  ctrl.on_command(make(0, 0, kFlagArm));
+  ctrl.on_command(make(0, 0, kFlagArm | teledrive::protocol::kFlagAuto));
+  ctrl.on_command(make(0, 0, kFlagArm));   // 操作员退出自动
+  EXPECT_EQ(ctrl.state(), VehicleState::Armed);
+  EXPECT_EQ(ctrl.output().flags, 0);       // 输出里不再有自动标志
+}
+
+TEST_F(SafetyScenario, EStopOverridesAutoMode) {
+  ctrl.on_command(make(0, 0, kFlagArm));
+  ctrl.on_command(make(0, 0, kFlagArm | teledrive::protocol::kFlagAuto));
+  ctrl.on_command(make(0, 0, kFlagArm | teledrive::protocol::kFlagAuto | kFlagEStop));
+  EXPECT_EQ(ctrl.state(), VehicleState::Fault);
+}

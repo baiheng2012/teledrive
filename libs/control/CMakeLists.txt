@@ -2,6 +2,8 @@ add_library(control STATIC
   src/pid.cpp
   src/heading_hold.cpp
   src/speed_limiter.cpp
+  src/pure_pursuit.cpp
+
 )
 add_library(teledrive::control ALIAS control)
 target_include_directories(control PUBLIC include)

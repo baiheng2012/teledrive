@@ -95,3 +95,51 @@ TEST(ManualInput, UppercaseKeysWorkAndQuitIsReported) {
   in.handle_key('q');
   EXPECT_TRUE(in.quit_requested());
 }
+
+// ============ 自动模式键 ============
+
+TEST(ManualInput, AutoModeRequiresArm) {
+  ManualInput in;
+  in.handle_key('m');
+  EXPECT_FALSE(in.auto_mode());
+}
+
+TEST(ManualInput, MTogglesAutoModeAndSetsFlag) {
+  ManualInput in;
+  press(in, "em");
+  ASSERT_TRUE(in.auto_mode());
+  const auto c = in.next_command();
+  EXPECT_EQ(c.flags, proto::kFlagArm | proto::kFlagAuto);
+  EXPECT_EQ(c.linear, 0.0f);
+
+  in.handle_key('m');            // 再按一次退出
+  EXPECT_FALSE(in.auto_mode());
+  EXPECT_EQ(in.next_command().flags, proto::kFlagArm);
+}
+
+// 安全设计：任何手动行驶操作都立刻接管，退出自动
+TEST(ManualInput, DrivingKeyTakesOverFromAuto) {
+  ManualInput in;
+  press(in, "emw");
+  EXPECT_FALSE(in.auto_mode());
+  const auto c = in.next_command();
+  EXPECT_EQ(c.flags, proto::kFlagArm);
+  EXPECT_NEAR(c.linear, 0.1f, 1e-6f);
+}
+
+TEST(ManualInput, SpaceAndEStopCancelAuto) {
+  ManualInput a;
+  press(a, "em ");
+  EXPECT_FALSE(a.auto_mode());
+
+  ManualInput b;
+  press(b, "emx");
+  EXPECT_FALSE(b.auto_mode());
+  EXPECT_EQ(b.next_command().flags, proto::kFlagEStop);   // 急停期间只发急停标志
+}
+
+TEST(ManualInput, DisarmingCancelsAuto) {
+  ManualInput in;
+  press(in, "eme");
+  EXPECT_FALSE(in.auto_mode());
+}

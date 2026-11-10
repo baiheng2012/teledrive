@@ -7,3 +7,7 @@ target_link_libraries(operator_cli PRIVATE teledrive::node)
 # 离线仿真工具：输出 CSV，供 tools/ 里的 Python 脚本画图
 add_executable(sim_trace sim_trace.cpp)
 target_link_libraries(sim_trace PRIVATE teledrive::sim teledrive::control)
+
+# 离线路径跟踪仿真：输出 CSV，供 tools/ 里的 Python 脚本画图
+add_executable(path_trace path_trace.cpp)
+target_link_libraries(path_trace PRIVATE teledrive::sim teledrive::control)

@@ -41,6 +41,8 @@ add_executable(node_tests
   node/end_to_end_test.cpp
   node/manual_input_test.cpp
   node/obstacle_assist_test.cpp
+  node/auto_mode_test.cpp
+
 )
 target_link_libraries(node_tests PRIVATE teledrive::node GTest::gtest_main)
 gtest_discover_tests(node_tests)
@@ -50,7 +52,7 @@ add_executable(control_tests
   control/heading_hold_test.cpp
   control/speed_limiter_test.cpp
   control/obstacle_assist_closed_loop_test.cpp
-
+  control/pure_pursuit_test.cpp
 )
 target_link_libraries(control_tests PRIVATE teledrive::control teledrive::sim GTest::gtest_main)
 gtest_discover_tests(control_tests)

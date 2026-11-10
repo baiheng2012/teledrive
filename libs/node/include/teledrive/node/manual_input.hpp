@@ -11,6 +11,7 @@
 //   r       复位故障
 //   q       退出
 //
+//   m       自动模式开关（需先 arm；任何行驶键/空格/急停都会立刻退出自动）
 // 已知局限：键盘无法检测"按键松开"，所以做不到真正的死手开关，
 // 这里用"arm 开关"代替。真实手持遥控器靠硬件开关实现。
 
@@ -42,13 +43,14 @@ class ManualInput {
 
   bool armed() const { return armed_; }
   bool quit_requested() const { return quit_; }
-
+  bool auto_mode() const {return auto_;}
  private:
   void nudge(float& value, float delta, float limit);
   void stop_motion() { linear_ = 0.0f; angular_ = 0.0f; }
 
   ManualInputConfig config_;
   bool armed_{false};
+  bool auto_{false};
   bool quit_{false};
   float linear_{0.0f};
   float angular_{0.0f};

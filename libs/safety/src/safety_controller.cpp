@@ -12,8 +12,10 @@ bool has_flag(std::uint8_t flags, std::uint8_t bit) { return (flags & bit) != 0;
 
 // 速度指令是否为零。这里用精确比较是有意的：
 // "零"来自操作端摇杆死区处理后的精确 0，而不是计算结果。
-bool is_zero_motion(const Command& c) { return c.linear == 0.0f && c.angular == 0.0f; }
-
+//bool is_zero_motion(const Command& c) { return c.linear == 0.0f && c.angular == 0.0f; }
+bool is_zero_motion(const Command& c) {
+  return !has_flag(c.flags, protocol::kFlagAuto) && c.linear == 0.0f && c.angular == 0.0f;
+}
 }  // namespace
 
 SafetyController::SafetyController(const IClock& clock, SafetyConfig config)
