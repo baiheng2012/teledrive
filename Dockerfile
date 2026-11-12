@@ -19,3 +19,12 @@ COPY . .
 RUN cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release \
     && cmake --build build \
     && ctest --test-dir build --output-on-failure
+
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential cmake ninja-build git ca-certificates libopencv-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DTELEDRIVE_REQUIRE_OPENCV=ON \
+    && cmake --build build \
+    && ctest --test-dir build --output-on-failure

@@ -56,3 +56,17 @@ add_executable(control_tests
 )
 target_link_libraries(control_tests PRIVATE teledrive::control teledrive::sim GTest::gtest_main)
 gtest_discover_tests(control_tests)
+
+add_executable(video_tests video/video_packet_test.cpp)
+target_link_libraries(video_tests PRIVATE teledrive::video teledrive::transport GTest::gtest_main)
+gtest_discover_tests(video_tests)
+
+if(TELEDRIVE_HAVE_OPENCV)
+  add_executable(vision_tests
+    vision/scene_renderer_test.cpp
+    vision/jpeg_codec_test.cpp
+    vision/video_pipeline_test.cpp
+  )
+  target_link_libraries(vision_tests PRIVATE teledrive::vision teledrive::transport GTest::gtest_main)
+  gtest_discover_tests(vision_tests)
+endif()

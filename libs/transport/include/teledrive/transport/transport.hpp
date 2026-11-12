@@ -11,8 +11,8 @@
 
 namespace teledrive::transport {
 
-// 单个数据报的最大字节数。协议最大帧是 74 字节，256 绰绰有余。
-inline constexpr std::size_t kMaxDatagramSize = 256;
+// 单个数据报的最大字节数。控制帧最大 74 字节；视频分片约 1215 字节；1500 = 以太网 MTU，避免 IP 层分片。
+inline constexpr std::size_t kMaxDatagramSize = 1500;
 
 // 一个收到的数据报：内容 + 来源地址。
 // 用固定大小数组而不是 vector：收包发生在控制循环里，避免堆分配。

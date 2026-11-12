@@ -11,3 +11,9 @@ target_link_libraries(sim_trace PRIVATE teledrive::sim teledrive::control)
 # 离线路径跟踪仿真：输出 CSV，供 tools/ 里的 Python 脚本画图
 add_executable(path_trace path_trace.cpp)
 target_link_libraries(path_trace PRIVATE teledrive::sim teledrive::control)
+
+# 视觉演示：只有找到 OpenCV 才构建
+if(TELEDRIVE_HAVE_OPENCV)
+  add_executable(render_demo render_demo.cpp)
+  target_link_libraries(render_demo PRIVATE teledrive::vision)
+endif()
