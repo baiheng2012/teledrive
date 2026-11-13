@@ -8,6 +8,35 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 add_compile_options(-Wall -Wextra -Wpedantic)
 
+# ---- 质量工具开关（默认关闭，不影响日常构建）----
+option(TELEDRIVE_SANITIZE "Build with AddressSanitizer and UBSan" OFF)
+option(TELEDRIVE_COVERAGE "Build with gcov coverage instrumentation" OFF)
+
+# 两者不能同时开：sanitizer 改变了代码生成，覆盖率数据会失真
+if(TELEDRIVE_SANITIZE AND TELEDRIVE_COVERAGE)
+  message(FATAL_ERROR "TELEDRIVE_SANITIZE and TELEDRIVE_COVERAGE are mutually exclusive")
+endif()
+
+if(TELEDRIVE_SANITIZE)
+  # address：内存错误；undefined：未定义行为
+  # -fno-sanitize-recover=undefined：UBSan 默认只打印警告然后继续运行，测试照样显示通过。
+  #   加上它，发现未定义行为就直接终止程序，测试才会真的失败
+  # -fno-omit-frame-pointer：让报错时的调用栈更完整
+  add_compile_options(-fsanitize=address,undefined -fno-sanitize-recover=undefined
+                      -fno-omit-frame-pointer)
+  add_link_options(-fsanitize=address,undefined)
+endif()
+
+if(TELEDRIVE_COVERAGE)
+  # --coverage = -fprofile-arcs -ftest-coverage；-O0：关闭优化，行号才能精确对应
+  add_compile_options(--coverage -O0 -g)
+  add_link_options(--coverage)
+endif()
+
+
+
+
+
 option(TELEDRIVE_BUILD_TESTS "Build unit tests" ON)
 option(TELEDRIVE_WITH_OPENCV "Build the OpenCV-based vision module" ON)
 # CI 和 Docker 打开它：缺 OpenCV 就让配置直接失败，而不是悄悄跳过 vision 测试

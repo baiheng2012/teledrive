@@ -7,6 +7,7 @@ gtest_discover_tests(common_tests)
 add_executable(protocol_tests
   protocol/crc16_test.cpp
   protocol/messages_test.cpp
+  protocol/fuzz_test.cpp
 )
 target_link_libraries(protocol_tests PRIVATE teledrive::protocol GTest::gtest_main)
 gtest_discover_tests(protocol_tests)
@@ -42,6 +43,7 @@ add_executable(node_tests
   node/manual_input_test.cpp
   node/obstacle_assist_test.cpp
   node/auto_mode_test.cpp
+  node/garbage_test.cpp
 
 )
 target_link_libraries(node_tests PRIVATE teledrive::node GTest::gtest_main)
@@ -58,7 +60,7 @@ add_executable(control_tests
 target_link_libraries(control_tests PRIVATE teledrive::control teledrive::sim GTest::gtest_main)
 gtest_discover_tests(control_tests)
 
-add_executable(video_tests video/video_packet_test.cpp)
+add_executable(video_tests video/video_packet_test.cpp video/video_fuzz_test.cpp)
 target_link_libraries(video_tests PRIVATE teledrive::video teledrive::transport GTest::gtest_main)
 gtest_discover_tests(video_tests)
 
