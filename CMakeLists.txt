@@ -16,7 +16,7 @@ option(TELEDRIVE_REQUIRE_OPENCV "Fail configuration if OpenCV is missing" OFF)
 set(TELEDRIVE_HAVE_OPENCV OFF)
 if(TELEDRIVE_WITH_OPENCV)
   # QUIET：找不到时不报红色错误；COMPONENTS：只要用到的三个模块
-  find_package(OpenCV QUIET COMPONENTS core imgproc imgcodecs)
+  find_package(OpenCV QUIET COMPONENTS core imgproc imgcodecs highgui)
   if(OpenCV_FOUND)
     set(TELEDRIVE_HAVE_OPENCV ON)
     message(STATUS "OpenCV ${OpenCV_VERSION} found: vision module enabled")

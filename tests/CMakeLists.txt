@@ -66,7 +66,9 @@ if(TELEDRIVE_HAVE_OPENCV)
     vision/scene_renderer_test.cpp
     vision/jpeg_codec_test.cpp
     vision/video_pipeline_test.cpp
+    vision/video_link_test.cpp
   )
-  target_link_libraries(vision_tests PRIVATE teledrive::vision teledrive::transport GTest::gtest_main)
+  target_link_libraries(vision_tests PRIVATE
+    teledrive::vision teledrive::transport teledrive::node GTest::gtest_main)
   gtest_discover_tests(vision_tests)
 endif()
