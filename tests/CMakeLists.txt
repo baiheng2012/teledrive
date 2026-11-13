@@ -53,6 +53,7 @@ add_executable(control_tests
   control/speed_limiter_test.cpp
   control/obstacle_assist_closed_loop_test.cpp
   control/pure_pursuit_test.cpp
+  control/generated_pid_test.cpp
 )
 target_link_libraries(control_tests PRIVATE teledrive::control teledrive::sim GTest::gtest_main)
 gtest_discover_tests(control_tests)
