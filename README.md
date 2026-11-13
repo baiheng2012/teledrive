@@ -116,7 +116,51 @@ Limitations: the model fixes dt = 0.02 s (the 50 Hz control period), so the gene
 core is only equivalent to the hand-written one at that rate; input validation (NaN,
 bad dt) lives in the hand-written adapter, outside the model.
 
+## Quality
 
+- **Sanitizers**: the full suite (238 tests) runs under AddressSanitizer and UBSan in CI
+  (`-fno-sanitize-recover`, so any undefined behaviour fails the build)
+- **Property/fuzz tests** with fixed seeds: random bytes are never accepted; any
+  single-byte corruption of a valid frame is rejected; a lossy, duplicated, reordered
+  video stream never delivers a corrupt or out-of-order frame; 20,000 garbage datagrams
+  never move the vehicle
+- **Coverage**: about 93% of lines (97% of functions), measured with gcov/gcovr over the
+  hand-written libraries; Simulink-generated code is excluded because it is verified by
+  equivalence tests. Uncovered code is mostly the real-time loop helper and defensive
+  paths such as failed system calls
+- **CI**: GitHub Actions runs a regular build and a sanitizer build on every push
+
+## Performance
+
+Release build, WSL2 on a desktop CPU, general-purpose (non-real-time) Linux kernel;
+`apps/bench` reproduces these numbers.
+
+| Measurement | p50 | p99 | max |
+|---|---|---|---|
+| `VehicleNode::tick`, assist off | 0.40 us | 1.10 us | 86.4 us |
+| `VehicleNode::tick`, lidar assist on | 1.40 us | 2.50 us | 61.3 us |
+| UDP loopback round trip | 3.5 us | 13.2 us | 226.6 us |
+
+The control cycle budget is 20 ms (50 Hz); a full cycle including lidar ray casting
+uses well under 0.1% of it at p99. Protocol encode + decode takes about 500 ns per
+message. Video rendering and JPEG encoding (about 4 ms) run in the same cycle every
+100 ms. Occasional maxima of tens of microseconds come from OS scheduling; this is not
+a hard real-time guarantee. The loopback figure measures syscall overhead only, not
+network latency.
+
+## Docker
+
+The image is built in two stages (compile and test, then a runtime image that contains
+only `vehicle_sim` and runs as a non-root user). The compiler, sources and tests are not
+in the final image. Its size (about 650 MB vs 710 MB single-stage) is dominated by the
+distribution's OpenCV runtime dependencies.
+
+```bash
+docker build -t teledrive:slim .
+docker run --rm -p 9001:9001/udp -p 9002:9002/udp teledrive:slim
+```
+
+Run `operator_cli` on the host (it needs a display) with `--vehicle 127.0.0.1:9001`.
 
 
 ## Features
@@ -127,7 +171,7 @@ bad dt) lives in the hand-written adapter, outside the model.
 - Command watchdog (200 ms), command limiting, NaN/Inf rejection
 - Differential-drive simulation with acceleration limits and battery model
 - Replay/duplicate rejection with sequence wrap-around handling
-- CI (GitHub Actions) and Docker build, 60+ unit and end-to-end tests
+- CI (GitHub Actions) and Docker build, about 240 automated tests
 
 ## Build and run
 
@@ -145,7 +189,12 @@ ctest --test-dir build --output-on-failure
 Keys: `e` arm/disarm, `w`/`s` speed, `a`/`d` turn, `space` zero, `x` E-stop, `r` reset, `q` quit.
 
 ## Known limitations
-
-- No authentication or encryption on the link
+- No authentication or encryption on the control link; the video hello handshake can be
+  spoofed by anyone on the same network
 - Keyboard input cannot detect key release, so an arm toggle replaces a true deadman switch
-- Status line assumes a terminal at least 80 columns wide
+- Steering input does not self-center on the keyboard (angular velocity persists until zeroed)
+- Lidar covers only the front; reversing is not protected; obstacles are static circles
+- Latency shown in the video window is an estimate (RTT/2 + jitter), not a measurement
+- Decoded image size is not limited before JPEG decompression
+- Status lines assume a terminal at least 80 columns wide
+- The Simulink-generated PID is equivalent only at dt = 0.02 s
