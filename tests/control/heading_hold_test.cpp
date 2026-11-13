@@ -72,3 +72,42 @@ TEST(HeadingHold, RejectsConstantDisturbanceInClosedLoop) {
   EXPECT_GT(without, 1.0);   // 没有辅助：朝向严重偏离
   EXPECT_LT(with, 0.15);     // 有辅助：偏差很小
 }
+
+// 同一个闭环扰动场景，分别用手写和生成的 PID 核心运行
+namespace {
+double closed_loop_max_err(std::unique_ptr<teledrive::control::IPidCore> core) {
+  constexpr double kDt = 0.02, kDisturbance = 0.05;
+  DiffDriveModel car;
+  HeadingHold hh(teledrive::control::HeadingHoldConfig{}, std::move(core));
+  double max_err = 0.0;
+  for (int i = 0; i < 1500; ++i) {
+    const auto& s = car.state();
+    const double w = hh.update(0.0, s.pose.heading, s.linear_velocity, kDt);
+    proto::Command c;
+    c.linear = 1.0f;
+    c.angular = static_cast<float>(w + kDisturbance);
+    car.step(c, kDt);
+    if (i > 250) max_err = std::max(max_err, std::abs(car.state().pose.heading));
+  }
+  return max_err;
+}
+}  // namespace
+
+TEST(HeadingHoldCores, HandwrittenRejectsDisturbance) {
+  using namespace teledrive::control;
+  EXPECT_LT(closed_loop_max_err(std::make_unique<HandwrittenPid>(HeadingHoldConfig{}.pid)), 0.15);
+}
+
+TEST(HeadingHoldCores, GeneratedRejectsDisturbance) {
+  using namespace teledrive::control;
+  EXPECT_LT(closed_loop_max_err(std::make_unique<GeneratedPid>(HeadingHoldConfig{}.pid)), 0.15);
+}
+
+TEST(HeadingHoldCores, BothCoresGiveSameClosedLoopResult) {
+  using namespace teledrive::control;
+  const auto cfg = HeadingHoldConfig{}.pid;
+  EXPECT_NEAR(closed_loop_max_err(std::make_unique<HandwrittenPid>(cfg)),
+              closed_loop_max_err(std::make_unique<GeneratedPid>(cfg)), 1e-9);
+}
+
+

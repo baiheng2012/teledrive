@@ -8,6 +8,10 @@ namespace {
 constexpr double kPi = 3.14159265358979323846;
 }
 
+HeadingHold::HeadingHold(HeadingHoldConfig config, std::unique_ptr<IPidCore> pid)
+    : config_(config),
+      pid_(pid ? std::move(pid) : std::make_unique<HandwrittenPid>(config.pid)) {}
+
 double angle_diff(double target, double current) {
   double d = std::fmod(target - current, 2.0 * kPi);
   if (d > kPi) {
@@ -26,7 +30,7 @@ double HeadingHold::update(double operator_angular, double heading, double linea
   // 操作员在打方向，或车基本没动：不介入，并放弃锁定（下次直行时重新锁定当前朝向）
   if (operator_steering || !moving) {
     holding_ = false;
-    pid_.reset();  // 清掉旧状态，避免下次介入时带着过期的积分
+    pid_->reset();  // 清掉旧状态，避免下次介入时带着过期的积分
     return operator_angular;
   }
 
@@ -34,12 +38,12 @@ double HeadingHold::update(double operator_angular, double heading, double linea
   if (!holding_) {
     holding_ = true;
     target_ = heading;
-    pid_.reset();
+    pid_->reset();
   }
 
   // 误差用回绕后的最短角度差；微分用测量值（朝向）
   const double error = angle_diff(target_, heading);
-  return operator_angular + pid_.update(error, heading, dt);
+  return operator_angular + pid_->update(error, heading, dt);
 }
 
 }  // namespace teledrive::control
