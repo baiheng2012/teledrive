@@ -11,3 +11,9 @@ build/
 # Python 运行时缓存
 __pycache__/
 *.pyc
+
+# MATLAB / Simulink 的缓存与自动保存
+slprj/
+*.slxc
+*.asv
+*.autosave

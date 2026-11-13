@@ -22,3 +22,7 @@ if(TELEDRIVE_HAVE_OPENCV)
     target_compile_definitions(${app} PRIVATE TELEDRIVE_WITH_VISION=1)
   endforeach()
 endif()
+
+# 开环对照场景：输出 CSV，供 matlab/ 里的脚本交叉验证
+add_executable(sim_trace_open sim_trace_open.cpp)
+target_link_libraries(sim_trace_open PRIVATE teledrive::sim)
