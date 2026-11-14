@@ -44,7 +44,7 @@ add_executable(node_tests
   node/obstacle_assist_test.cpp
   node/auto_mode_test.cpp
   node/garbage_test.cpp
-
+  node/names_test.cpp
 )
 target_link_libraries(node_tests PRIVATE teledrive::node GTest::gtest_main)
 gtest_discover_tests(node_tests)
@@ -75,3 +75,11 @@ if(TELEDRIVE_HAVE_OPENCV)
     teledrive::vision teledrive::transport teledrive::node GTest::gtest_main)
   gtest_discover_tests(vision_tests)
 endif()
+add_executable(can_tests
+  can/can_mapping_test.cpp
+  can/can_transport_test.cpp
+  can/can_node_test.cpp
+  can/socketcan_test.cpp
+)
+target_link_libraries(can_tests PRIVATE teledrive::can teledrive::node GTest::gtest_main)
+gtest_discover_tests(can_tests)
