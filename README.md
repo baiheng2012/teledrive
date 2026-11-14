@@ -1,8 +1,20 @@
 # TeleDrive
+[![CI](https://github.com/baiheng2012/teledrive/actions/workflows/ci.yml/badge.svg)](https://github.com/baiheng2012/teledrive/actions/workflows/ci.yml)
+C++17 · CMake · GoogleTest · OpenCV · SocketCAN · MATLAB/Simulink · Docker · GitHub Actions
 
-A C++17 tele-operation framework with a safety state machine, heartbeat/command watchdog,
-and a simulated differential-drive vehicle. Built as a foundation for operator-assist
-and semi-autonomous driving features.
+A C++17 tele-operation framework with a safety state machine, command watchdog, and a
+simulated differential-drive vehicle. It is built as a foundation for operator-assist and
+semi-autonomous driving features.
+
+The design is motivated by remotely operated mining vehicles, where an operator controls
+a machine from outside the hazardous area (line-of-sight, tele-remote and tele-operation
+modes) and a lost link, a dropped command or a bad input must never leave the machine
+moving. TeleDrive models that problem on a simulated vehicle: latched faults, E-stop
+priority, a 200 ms command watchdog, obstacle-aware speed limiting and a path-following
+mode that all sit behind one safety layer, over UDP or CAN, with live onboard video.
+
+This is a software simulation. It has not been run on real vehicle hardware, and the
+vehicle parameters are illustrative rather than calibrated to any real machine.
 
 ## Demo
 
@@ -116,9 +128,27 @@ Limitations: the model fixes dt = 0.02 s (the 50 Hz control period), so the gene
 core is only equivalent to the hand-written one at that rate; input validation (NaN,
 bad dt) lives in the hand-written adapter, outside the model.
 
+## CAN transport
+
+`CanTransport` implements the same `ITransport` interface over Linux SocketCAN, so
+`VehicleNode` and `OperatorSession` run on a CAN bus without modification (tested on the
+virtual interface `vcan0`). Protocol frames (14 to 28 bytes) are split into classic CAN
+frames with a 2-byte fragment header. The 11-bit ID encodes
+`[priority:3][destination:4][source:4]`, so hardware arbitration favours E-stop frames
+over commands, heartbeats and telemetry. Reassembly is per source node, drops an
+incomplete message when a newer one starts, and the protocol-level CRC still validates
+every message. A mock bus allows testing without a CAN interface; real-bus tests are
+skipped when `vcan0` is missing.
+
+Estimated bus load at 500 kbit/s is about 7% (50 Hz commands, 10 Hz telemetry, 5 Hz
+heartbeat); this is a calculation, not a measurement. Video stays on UDP.
+Limitations: classic CAN only (no CAN FD or ISO-TP), no real hardware tested, static
+node ids.The real-bus tests also run in CI on a virtual `vcan0` interface.
+
+
 ## Quality
 
-- **Sanitizers**: the full suite (238 tests) runs under AddressSanitizer and UBSan in CI
+- **Sanitizers**: the full suite (270+ tests) runs under AddressSanitizer and UBSan in CI
   (`-fno-sanitize-recover`, so any undefined behaviour fails the build)
 - **Property/fuzz tests** with fixed seeds: random bytes are never accepted; any
   single-byte corruption of a valid frame is rejected; a lossy, duplicated, reordered
@@ -171,7 +201,9 @@ Run `operator_cli` on the host (it needs a display) with `--vehicle 127.0.0.1:90
 - Command watchdog (200 ms), command limiting, NaN/Inf rejection
 - Differential-drive simulation with acceleration limits and battery model
 - Replay/duplicate rejection with sequence wrap-around handling
-- CI (GitHub Actions) and Docker build, about 240 automated tests
+- CI (GitHub Actions) and Docker build, about 270 automated tests
+- CAN transport(SocketCAN)
+
 
 ## Build and run
 
@@ -198,3 +230,4 @@ Keys: `e` arm/disarm, `w`/`s` speed, `a`/`d` turn, `space` zero, `x` E-stop, `r`
 - Decoded image size is not limited before JPEG decompression
 - Status lines assume a terminal at least 80 columns wide
 - The Simulink-generated PID is equivalent only at dt = 0.02 s
+- CAN: classic frames only, tested on virtual bus
